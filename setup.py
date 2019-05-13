@@ -7,21 +7,20 @@ with open("requirements.txt", 'r') as fh:
     requirements = fh.read().splitlines()
 
 setuptools.setup(
-    name="zinv-analysis",
-    version="0.2.0",
+    name="pysge",
+    version="0.0.1",
     author="Shane Breeze",
     author_email="sdb15@ic.ac.uk",
     scripts=["pysge/pysge_worker.py", "pysge/pysge_worker.sh"],
-    description="AlphaTwirl + uproot for the Z inv. width analysis",
+    description="python interface to submit functions to an SGE batch cluster",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/shane-breeze/zinv-analysis",
+    url="https://github.com/shane-breeze/pysge",
     packages=setuptools.find_packages(),
     install_requires=requirements,
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     classifiers=(
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
