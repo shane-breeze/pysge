@@ -1,3 +1,5 @@
+from .interface import submit
+
 import logging
 
 logger = logging.getLogger(__name__)

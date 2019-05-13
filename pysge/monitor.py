@@ -44,11 +44,10 @@ SGE_JOBSTATE_CODES = {
 }
 
 class JobMonitor(object):
-    def __init__(self, submitter, sleep=0.5):
+    def __init__(self, submitter):
         self.submitter = submitter
-        self.sleep = sleep
 
-    def monitor_jobs(self):
+    def monitor_jobs(self, sleep=5):
         jobid_tasks = self.submitter.jobid_tasks
         ntotal = len(jobid_tasks)
         nremaining = ntotal
@@ -77,7 +76,7 @@ class JobMonitor(object):
             pbar_fin.n = len(self.finished)
             pbar_run.refresh()
             pbar_fin.refresh()
-            time.sleep(self.sleep)
+            time.sleep(sleep)
 
         pbar_run.close()
         pbar_fin.close()
