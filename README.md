@@ -22,4 +22,4 @@ results = pysge.mp_submit(tasks, ncores=4)
 results = pysge.sge_submit("name", "/tmp/pysge-temporaries", tasks=tasks, options="-q hep.q")
 ```
 
-The return value is a dictionary of taskid's to the return value of the function being called
+The return value is a dictionary of taskid's to the return value of the function being called (probably should just be a list corresponding to the input list).
