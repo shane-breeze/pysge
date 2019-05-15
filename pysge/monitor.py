@@ -52,8 +52,8 @@ class JobMonitor(object):
         ntotal = len(jobid_tasks)
         nremaining = ntotal
 
-        pbar_run = tqdm(total=ntotal, desc="Running ")
-        pbar_fin = tqdm(total=ntotal, desc="Finished")
+        pbar_run = tqdm(total=ntotal, desc="Running ", dynamic_ncols=True)
+        pbar_fin = tqdm(total=ntotal, desc="Finished", dynamic_ncols=True)
 
         self.finished = []
         self.results = {}

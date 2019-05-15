@@ -18,7 +18,7 @@ class WorkingArea(object):
     def create_areas(self, tasks):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
-        for idx, task in tqdm(enumerate(tasks), total=len(tasks)):
+        for idx, task in tqdm(enumerate(tasks), total=len(tasks), dynamic_ncols=True):
             package_name = 'task_{:05d}'.format(idx)
             path = os.path.join(self.path, package_name)
             if not os.path.exists(path):
