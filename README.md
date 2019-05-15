@@ -8,6 +8,8 @@
      /    /        \\\     -
 ```
 
+Call python functions on (IC) SGE batch cluster - with tqdm progress bars.
+
 ## How to use
 
 High-level interface use:
