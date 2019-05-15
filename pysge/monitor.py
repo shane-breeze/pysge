@@ -80,7 +80,7 @@ class JobMonitor(object):
 
         pbar_run.close()
         pbar_fin.close()
-        print()
+        print("")
         return self.results
 
     def check_jobs(self, jobid_tasks):
@@ -92,7 +92,7 @@ class JobMonitor(object):
                     self.results[task] = pickle.load(f)
             except (IOError, EOFError, pickle.UnpicklingError) as e:
                 has_resub = True
-                logger.info(f'Resubmitting {task}')
+                logger.info('Resubmitting {}'.format(task))
                 self.submitter.submit_tasks([task], request_user_input=True)
 
             if has_resub:
@@ -116,6 +116,6 @@ class JobMonitor(object):
 
             if state not in job_status:
                 job_status[state] = []
-            job_status[state].append(f'{jobid}.{taskid}')
+            job_status[state].append('{}.{}'.format(jobid, taskid))
 
         return job_status
