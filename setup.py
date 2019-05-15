@@ -8,7 +8,7 @@ with open("requirements.txt", 'r') as fh:
 
 setuptools.setup(
     name="pysge",
-    version="0.0.1",
+    version="0.1.0",
     author="Shane Breeze",
     author_email="sdb15@ic.ac.uk",
     scripts=["pysge/pysge_worker.py", "pysge/pysge_worker.sh"],
@@ -21,6 +21,7 @@ setuptools.setup(
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     classifiers=(
+        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
