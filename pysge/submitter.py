@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from builtins import input
 
 from .utils import run_command
 
@@ -13,7 +14,7 @@ class TaskSubmitter(object):
         self.job_options = job_options
         self.jobid_tasks = {}
 
-    def submit_tasks(self, tasks, dryrun=False):
+    def submit_tasks(self, tasks, dryrun=False, request_user_input=False):
         if tasks is None or len(tasks) <= 0:
             return
 
@@ -21,8 +22,17 @@ class TaskSubmitter(object):
         njobs = len(tasks)
         os.chdir(os.path.dirname(tasks[0]))
         executable = run_command("which pysge_worker.sh")[0].decode("utf-8")
+
+        job_opts = self.job_options
+        if request_user_input:
+            job_opts = input(
+                "Using job options '{}'. Insert new options or nothing to use "
+                "the default\n:"
+            )
+            job_opts = job_opts if job_opts != "" else self.job_options
+
         cmd = self.submit_command.format(
-            executable=executable, njobs=njobs, job_opts=self.job_options,
+            executable=executable, njobs=njobs, job_opts=job_opts,
         )
         if not dryrun:
             out, err = run_command(cmd)

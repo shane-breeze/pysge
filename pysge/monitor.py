@@ -93,7 +93,7 @@ class JobMonitor(object):
             except (IOError, EOFError, pickle.UnpicklingError) as e:
                 has_resub = True
                 logger.info(f'Resubmitting {task}')
-                self.submitter.submit_tasks([task])
+                self.submitter.submit_tasks([task], request_user_input=True)
 
             if has_resub:
                 self.submitter.jobid_tasks.pop(jobid)
