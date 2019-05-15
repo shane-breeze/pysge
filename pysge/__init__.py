@@ -1,4 +1,4 @@
-from .interface import submit
+from .interface import local_submit, mp_submit, sge_submit
 
 import logging
 
