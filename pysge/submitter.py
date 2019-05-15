@@ -7,30 +7,43 @@ from .utils import run_command
 logger = logging.getLogger(__name__)
 
 class TaskSubmitter(object):
-    submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t 1-{njobs}:1 {job_opts} $(which {executable})'
-    regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.1-[0-9]+:1 \("pysge_worker\.sh"\) has been submitted')
+    submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t 1-{njobs}:1 {job_opts} {executable}'
+    regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.1-[0-9]+:1 \(".*"\) has been submitted')
     def __init__(self, job_options):
         self.job_options = job_options
         self.jobid_tasks = {}
 
-    def submit_tasks(self, tasks):
+    def submit_tasks(self, tasks, dryrun=False):
         if tasks is None or len(tasks) <= 0:
             return
 
         curdir = os.getcwd()
         njobs = len(tasks)
         os.chdir(os.path.dirname(tasks[0]))
+        executable = run_command("which pysge_worker.sh")[0].decode("utf-8")
         cmd = self.submit_command.format(
-            executable="pysge_worker.sh", njobs=njobs,
-            job_opts=self.job_options,
+            executable=executable, njobs=njobs, job_opts=self.job_options,
         )
-        out, err = run_command(cmd)
-        os.chdir(curdir)
+        if not dryrun:
+            out, err = run_command(cmd)
+            match = self.regex_submit.search(out.decode("utf-8"))
+            jobid = int(match.group("jobid"))
+            logger.info(f'Submitted {jobid}.1-{njobs}:1')
+        else:
+            print(cmd)
+            jobid = 0
 
-        match = self.regex_submit.search(out.decode("utf-8"))
-        jobid = int(match.group("jobid"))
-        logger.info(f'Submitted {jobid}.1-{njobs}:1')
+        os.chdir(curdir)
 
         for aid in range(njobs):
             arrayid = aid+1
             self.jobid_tasks[f'{jobid}.{arrayid}'] = tasks[aid]
+
+    def killall(self):
+        jids = []
+        for jobid, _ in self.jobid_tasks.items():
+            tjid = jobid.split(".")[0]
+            if tjid not in jids:
+                jids.append(tjid)
+        cmd = "qdel {}".format(" ".join(jids))
+        run_command(cmd)
