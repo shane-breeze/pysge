@@ -17,7 +17,7 @@ class SGETaskSubmitter(object):
         self.job_options = job_options
         self.jobid_tasks = {}
 
-    def submit_tasks(self, tasks, dryrun=False, request_user_input=False):
+    def submit_tasks(self, tasks, dryrun=False, request_user_input=False, quiet=False):
         if tasks is None or len(tasks) <= 0:
             return
 
@@ -62,13 +62,13 @@ class SGETaskSubmitter(object):
         run_command(cmd)
 
 class MPTaskSubmitter(object):
-    def submit_tasks(self, tasks, ncores=4, sleep=1):
+    def submit_tasks(self, tasks, ncores=4, sleep=1, quiet=False):
         if tasks is None or len(tasks) <= 0:
             return
 
         results = []
         pool = Pool(processes=ncores)
-        pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True)
+        pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
 
         try:
             for task in tasks:

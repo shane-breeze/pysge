@@ -12,7 +12,7 @@ def validate_tasks(tasks):
             return False
     return True
 
-def sge_submit(name, path, tasks=[], options="-q hep.q", dryrun=False):
+def sge_submit(name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False):
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
@@ -24,16 +24,16 @@ def sge_submit(name, path, tasks=[], options="-q hep.q", dryrun=False):
     monitor = JobMonitor(submitter)
 
     results = {}
-    area.create_areas(tasks)
+    area.create_areas(tasks, quiet=quiet)
     try:
-        submitter.submit_tasks(area.task_paths, dryrun=dryrun)
+        submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
         if not dryrun:
             results = monitor.monitor_jobs(sleep=10)
     except KeyboardInterrupt as e:
         submitter.killall()
     return results
 
-def mp_submit(tasks, ncores=4):
+def mp_submit(tasks, ncores=4, quiet=False):
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
@@ -41,9 +41,9 @@ def mp_submit(tasks, ncores=4):
         )
         return {}
     submitter = MPTaskSubmitter()
-    return submitter.submit_tasks(tasks, ncores=ncores)
+    return submitter.submit_tasks(tasks, ncores=ncores, quiet=quiet)
 
-def local_submit(tasks):
+def local_submit(tasks, quiet=False):
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
@@ -52,7 +52,7 @@ def local_submit(tasks):
         return {}
 
     results = []
-    pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True)
+    pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, diable=quiet)
 
     try:
         for t in tasks:
