@@ -52,7 +52,7 @@ def local_submit(tasks, quiet=False):
         return {}
 
     results = []
-    pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, diable=quiet)
+    pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
 
     try:
         for t in tasks:
