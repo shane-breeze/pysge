@@ -92,7 +92,7 @@ class JobMonitor(object):
                     self.results[task] = pickle.load(f)
             except (IOError, EOFError, pickle.UnpicklingError) as e:
                 has_resub = True
-                logger.info('Resubmitting {}'.format(task))
+                logger.info('Resubmitting {}: {}'.format(jobid, task))
                 self.submitter.submit_tasks([task], request_user_input=True)
 
             if has_resub:
@@ -111,9 +111,12 @@ class JobMonitor(object):
                 continue
             ws = l.split()
             jobid = ws[0]
-            state = SGE_JOBSTATE_CODES[ws[4]]
             taskid = int(ws[-1])
 
+            if not '{}.{}'.format(jobid, taskid) in self.submitter.jobid_tasks.keys():
+                continue
+
+            state = SGE_JOBSTATE_CODES[ws[4]]
             if state not in job_status:
                 job_status[state] = []
             job_status[state].append('{}.{}'.format(jobid, taskid))
