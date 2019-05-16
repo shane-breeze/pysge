@@ -30,7 +30,7 @@ class SGETaskSubmitter(object):
         if request_user_input:
             job_opts = input(
                 "Using job options '{}'. Insert new options or nothing to use "
-                "the default\n:"
+                "the default\n:".format(job_opts)
             )
             job_opts = job_opts if job_opts != "" else self.job_options
 
