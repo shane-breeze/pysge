@@ -12,7 +12,10 @@ def validate_tasks(tasks):
             return False
     return True
 
-def sge_submit(name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False):
+def sge_submit(
+    name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False,
+    sleep=5, request_resubmission_options=True,
+):
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
@@ -28,7 +31,9 @@ def sge_submit(name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=Fal
     try:
         submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
         if not dryrun:
-            results = monitor.monitor_jobs(sleep=10)
+            results = monitor.monitor_jobs(
+                sleep=sleep, request_user_input=request_resubmission_options,
+            )
     except KeyboardInterrupt as e:
         submitter.killall()
     return results

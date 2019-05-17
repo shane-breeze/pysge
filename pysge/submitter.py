@@ -41,7 +41,6 @@ class SGETaskSubmitter(object):
             executable=executable, start=start+1, njobs=njobs+start,
             job_opts=job_opts,
         )
-        print(cmd)
         if not dryrun:
             out, err = run_command(cmd)
             match = self.regex_submit.search(out.decode("utf-8"))
