@@ -47,16 +47,31 @@ class JobMonitor(object):
     def __init__(self, submitter):
         self.submitter = submitter
 
-    def monitor_jobs(self, sleep=5):
+    def monitor_jobs(self, sleep=5, request_user_input=True):
         jobid_tasks = self.submitter.jobid_tasks
         ntotal = len(jobid_tasks)
-        nremaining = ntotal
 
         pbar_run = tqdm(total=ntotal, desc="Running ", dynamic_ncols=True)
         pbar_fin = tqdm(total=ntotal, desc="Finished", dynamic_ncols=True)
 
-        self.finished = []
-        self.results = {}
+        for running, results in self.return_finished_jobs(request_user_input=request_user_input):
+            pbar_run.n = len(running)
+            pbar_fin.n = len([r for r  in results if r is not None])
+            pbar_run.refresh()
+            pbar_fin.refresh()
+            time.sleep(sleep)
+
+        pbar_run.close()
+        pbar_fin.close()
+        print("")
+        return results
+
+    def return_finished_jobs(self, request_user_input=True):
+        jobid_tasks = self.submitter.jobid_tasks
+        ntotal = len(jobid_tasks)
+        nremaining = ntotal
+
+        finished, results = [], [None]*ntotal
 
         while nremaining>0:
             job_statuses = self.query_jobs()
@@ -67,38 +82,30 @@ class JobMonitor(object):
             jobs_not_queried = {
                 jobid: task
                 for jobid, task in self.submitter.jobid_tasks.items()
-                if jobid not in all_queried_jobs and jobid not in self.finished
+                if jobid not in all_queried_jobs and jobid not in finished
             }
-            self.finished.extend(self.check_jobs(jobs_not_queried))
+            finished.extend(self.check_jobs(jobs_not_queried, results, request_user_input=request_user_input))
 
-            nremaining = ntotal - len(self.finished)
-            pbar_run.n = len(job_statuses.get(1, {}))
-            pbar_fin.n = len(self.finished)
-            pbar_run.refresh()
-            pbar_fin.refresh()
-            time.sleep(sleep)
+            nremaining = ntotal - len(finished)
+            yield job_statuses.get(1, {}), results
 
-        pbar_run.close()
-        pbar_fin.close()
-        print("")
-        return self.results
+        # all jobs finished - final loop
+        yield {}, results
 
-    def check_jobs(self, jobid_tasks):
+    def check_jobs(self, jobid_tasks, results, request_user_input=True):
         finished = []
         for jobid, task in jobid_tasks.items():
-            has_resub = False
+            pos = int(os.path.basename(task).split("_")[-1])
             try:
                 with gzip.open(os.path.join(task, "result.p.gz"), 'rb') as f:
-                    self.results[task] = pickle.load(f)
-            except (IOError, EOFError, pickle.UnpicklingError) as e:
-                has_resub = True
-                logger.info('Resubmitting {}: {}'.format(jobid, task))
-                self.submitter.submit_tasks([task], request_user_input=True)
-
-            if has_resub:
-                self.submitter.jobid_tasks.pop(jobid)
-            else:
+                    results[pos] = pickle.load(f)
                 finished.append(jobid)
+            except (IOError, EOFError, pickle.UnpicklingError) as e:
+                logger.info('Resubmitting {}: {}'.format(jobid, task))
+                self.submitter.submit_tasks(
+                    [task], start=pos, request_user_input=request_user_input,
+                )
+                self.submitter.jobid_tasks.pop(jobid)
 
         return finished
 

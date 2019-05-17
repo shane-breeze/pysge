@@ -11,13 +11,16 @@ from .utils import run_command
 logger = logging.getLogger(__name__)
 
 class SGETaskSubmitter(object):
-    submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t 1-{njobs}:1 {job_opts} {executable}'
-    regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.1-[0-9]+:1 \(".*"\) has been submitted')
+    submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t {start}-{njobs}:1 {job_opts} {executable}'
+    regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.(?P<start>[0-9]+)-(?P<stop>[0-9]+):1 \(".*"\) has been submitted')
     def __init__(self, job_options):
         self.job_options = job_options
         self.jobid_tasks = {}
 
-    def submit_tasks(self, tasks, dryrun=False, request_user_input=False, quiet=False):
+    def submit_tasks(
+        self, tasks, start=0, dryrun=False, request_user_input=False,
+        quiet=False,
+    ):
         if tasks is None or len(tasks) <= 0:
             return
 
@@ -35,13 +38,16 @@ class SGETaskSubmitter(object):
             job_opts = job_opts if job_opts != "" else self.job_options
 
         cmd = self.submit_command.format(
-            executable=executable, njobs=njobs, job_opts=job_opts,
+            executable=executable, start=start+1, njobs=njobs+start,
+            job_opts=job_opts,
         )
         if not dryrun:
             out, err = run_command(cmd)
             match = self.regex_submit.search(out.decode("utf-8"))
             jobid = int(match.group("jobid"))
-            logger.info('Submitted {}.1-{}:1'.format(jobid, njobs))
+            start = int(match.group("start"))
+            stop = int(match.group("stop"))
+            logger.info('Submitted {}.{}-{}:1'.format(jobid, start, stop))
         else:
             print(cmd)
             jobid = 0
@@ -49,8 +55,7 @@ class SGETaskSubmitter(object):
         os.chdir(curdir)
 
         for aid in range(njobs):
-            arrayid = aid+1
-            self.jobid_tasks['{}.{}'.format(jobid, arrayid)] = tasks[aid]
+            self.jobid_tasks['{}.{}'.format(jobid, aid+start)] = tasks[aid]
 
     def killall(self):
         jids = []
@@ -92,4 +97,4 @@ class MPTaskSubmitter(object):
         pbar.close()
         print("")
 
-        return {i: r for i, r in enumerate(results)}
+        return results
