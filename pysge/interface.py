@@ -67,4 +67,4 @@ def local_submit(tasks, quiet=False):
         results = []
 
     pbar.close()
-    return {i: r for i, r in enumerate(results)}
+    return results

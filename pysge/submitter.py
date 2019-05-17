@@ -97,4 +97,4 @@ class MPTaskSubmitter(object):
         pbar.close()
         print("")
 
-        return {i: r for i, r in enumerate(results)}
+        return results
