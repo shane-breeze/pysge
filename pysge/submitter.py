@@ -44,6 +44,9 @@ class SGETaskSubmitter(object):
         if not dryrun:
             out, err = run_command(cmd)
             match = self.regex_submit.search(out.decode("utf-8"))
+            if match is None:
+                logger.error("Malformed qsub submission string: {}".format(repr(out.decode("utf-8"))))
+                assert RuntimeError
             jobid = int(match.group("jobid"))
             start = int(match.group("start"))
             stop = int(match.group("stop"))

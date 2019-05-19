@@ -21,12 +21,12 @@ def sge_submit(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
             "'kwargs': {..}}, ...], where 'task' is callable."
         )
-        return {}
+        return []
     area = WorkingArea(os.path.abspath(path))
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
     monitor = JobMonitor(submitter)
 
-    results = {}
+    results = []
     area.create_areas(tasks, quiet=quiet)
     try:
         submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
@@ -38,13 +38,34 @@ def sge_submit(
         submitter.killall()
     return results
 
+def sge_submit_yield(
+    name, path, tasks=[], options="-q hep.q", quiet=False, sleep=5,
+    request_resubmission_options=True,
+):
+    if not validate_tasks(tasks):
+        logger.error(
+            "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
+            "'kwargs': {..}}, ...], where 'task' is callable."
+        )
+        return []
+    area = WorkingArea(os.path.abspath(path))
+    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
+    monitor = JobMonitor(submitter)
+
+    results = []
+    area.create_areas(tasks, quiet=quiet)
+    submitter.submit_tasks(area.task_paths, quiet=quiet)
+    return monitor.request_jobs(
+        sleep=sleep, request_user_input=request_resubmission_options,
+    )
+
 def mp_submit(tasks, ncores=4, quiet=False):
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
             "'kwargs': {..}}, ...], where 'task' is callable."
         )
-        return {}
+        return []
     submitter = MPTaskSubmitter()
     return submitter.submit_tasks(tasks, ncores=ncores, quiet=quiet)
 
@@ -54,7 +75,7 @@ def local_submit(tasks, quiet=False):
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
             "'kwargs': {..}}, ...], where 'task' is callable."
         )
-        return {}
+        return []
 
     results = []
     pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
