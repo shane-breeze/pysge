@@ -66,6 +66,28 @@ class JobMonitor(object):
         print("")
         return results
 
+    def request_jobs(self, sleep=5, request_user_input=True):
+        jobid_tasks = self.submitter.jobid_tasks
+        ntotal = len(jobid_tasks)
+
+        pbar_run = tqdm(total=ntotal, desc="Running ", dynamic_ncols=True)
+        pbar_fin = tqdm(total=ntotal, desc="Finished", dynamic_ncols=True)
+        try:
+            for running, results in self.return_finished_jobs(request_user_input=request_user_input):
+                pbar_run.n = len(running)
+                pbar_fin.n = len([r for r  in results if r is not None])
+                pbar_run.refresh()
+                pbar_fin.refresh()
+                time.sleep(sleep)
+                yield results
+        except KeyboardInterrupt as e:
+            self.submitter.killall()
+
+        pbar_run.close()
+        pbar_fin.close()
+        print("")
+        yield results
+
     def return_finished_jobs(self, request_user_input=True):
         jobid_tasks = self.submitter.jobid_tasks
         ntotal = len(jobid_tasks)
