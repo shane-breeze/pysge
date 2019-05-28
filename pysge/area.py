@@ -3,17 +3,23 @@ import datetime
 import tempfile
 import gzip
 import pickle
+import glob
 from tqdm import tqdm
 import logging
 logger = logging.getLogger(__name__)
 
 class WorkingArea(object):
-    def __init__(self, path):
+    def __init__(self, path, resume=False):
         self.task_paths = None
-        prefix = 'tpd_{:%Y%m%d_%H%M%S}_'.format(datetime.datetime.now())
-        self.path = tempfile.mkdtemp(prefix=prefix, dir=os.path.abspath(path))
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+
+        if resume:
+            self.path = path
+            self.get_areas()
+        else:
+            prefix = 'tpd_{:%Y%m%d_%H%M%S}_'.format(datetime.datetime.now())
+            self.path = tempfile.mkdtemp(prefix=prefix, dir=os.path.abspath(path))
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
 
     def create_areas(self, tasks, quiet=False):
         task_paths = []
@@ -28,3 +34,6 @@ class WorkingArea(object):
                 pickle.dump(task, f)
             task_paths.append(path)
         self.task_paths = task_paths
+
+    def get_areas(self):
+        self.task_paths = list(glob.glob(os.path.join(self.path, "task_*")))

@@ -1,4 +1,6 @@
-from .interface import local_submit, mp_submit, sge_submit, sge_submit_yield
+from .interface import (
+    local_submit, mp_submit, sge_submit, sge_submit_yield, sge_resume
+)
 
 import logging
 

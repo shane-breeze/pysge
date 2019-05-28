@@ -52,9 +52,22 @@ def sge_submit_yield(
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
     monitor = JobMonitor(submitter)
 
-    results = []
     area.create_areas(tasks, quiet=quiet)
     submitter.submit_tasks(area.task_paths, quiet=quiet)
+    return monitor.request_jobs(
+        sleep=sleep, request_user_input=request_resubmission_options,
+    )
+
+def sge_resume(
+    name, path, options="-q hep.q", quiet=False, sleep=5,
+    request_resubmission_options=True,
+):
+    area = WorkingArea(os.path.abspath(path), resume=True)
+    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
+    for idx in range(len(area.task_paths)):
+        submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
+    monitor = JobMonitor(submitter)
+
     return monitor.request_jobs(
         sleep=sleep, request_user_input=request_resubmission_options,
     )
