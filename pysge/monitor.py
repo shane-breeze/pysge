@@ -1,12 +1,16 @@
 import os
 import logging
-import gzip
-import pickle
+import lz4.frame
 import time
 import copy
 from tqdm import tqdm
 from .utils import run_command
 logger = logging.getLogger(__name__)
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 SGE_JOBSTATUS = {
     1: "Running",
@@ -119,8 +123,9 @@ class JobMonitor(object):
         for jobid, task in jobid_tasks.items():
             pos = int(os.path.basename(task).split("_")[-1])
             try:
-                with gzip.open(os.path.join(task, "result.p.gz"), 'rb') as f:
-                    results[pos] = pickle.load(f)
+                with lz4.frame.open(os.path.join(task, "result.p.lz4"), 'rb') as f:
+                    pickle.load(f)
+                results[pos] = os.path.join(task, "result.p.lz4")
                 finished.append(jobid)
             except (IOError, EOFError, pickle.UnpicklingError) as e:
                 logger.info('Resubmitting {}: {}'.format(jobid, task))

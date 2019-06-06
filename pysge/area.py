@@ -1,12 +1,16 @@
 import os
 import datetime
 import tempfile
-import gzip
-import pickle
+import lz4.frame
 import glob
-from tqdm import tqdm
+import tqdm
 import logging
 logger = logging.getLogger(__name__)
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 class WorkingArea(object):
     def __init__(self, path, resume=False):
@@ -24,13 +28,16 @@ class WorkingArea(object):
     def create_areas(self, tasks, quiet=False):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
-        for idx, task in tqdm(enumerate(tasks), total=len(tasks), dynamic_ncols=True, disable=quiet):
+        for idx, task in tqdm.tqdm(
+            enumerate(tasks), total=len(tasks), dynamic_ncols=True,
+            disable=quiet,
+        ):
             package_name = 'task_{:05d}'.format(idx)
             path = os.path.join(self.path, package_name)
             if not os.path.exists(path):
                 os.makedirs(path)
-            file_path = os.path.join(os.path.join(path, "task.p.gz"))
-            with gzip.open(file_path, 'wb') as f:
+            file_path = os.path.join(os.path.join(path, "task.p.lz4"))
+            with lz4.frame.open(file_path, 'wb') as f:
                 pickle.dump(task, f)
             task_paths.append(path)
         self.task_paths = task_paths

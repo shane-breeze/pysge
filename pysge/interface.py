@@ -68,9 +68,14 @@ def sge_resume(
         submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
     monitor = JobMonitor(submitter)
 
-    return monitor.request_jobs(
-        sleep=sleep, request_user_input=request_resubmission_options,
-    )
+    results = []
+    try:
+        results = monitor.monitor_jobs(
+            sleep=sleep, request_user_input=request_resubmission_options,
+        )
+    except KeyboardInterrupt as e:
+        submitter.killall()
+    return results
 
 def mp_submit(tasks, ncores=4, quiet=False):
     if not validate_tasks(tasks):
