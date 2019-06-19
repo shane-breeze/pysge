@@ -3,7 +3,7 @@ import logging
 import lz4.frame
 import time
 import copy
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from .utils import run_command
 logger = logging.getLogger(__name__)
 

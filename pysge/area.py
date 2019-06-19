@@ -3,7 +3,7 @@ import datetime
 import tempfile
 import lz4.frame
 import glob
-import tqdm
+from tqdm.auto import tqdm
 import logging
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class WorkingArea(object):
     def create_areas(self, tasks, quiet=False):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
-        for idx, task in tqdm.tqdm(
+        for idx, task in tqdm(
             enumerate(tasks), total=len(tasks), disable=quiet,
         ):
             package_name = 'task_{:05d}'.format(idx)

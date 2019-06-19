@@ -1,5 +1,5 @@
 import os
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from .area import WorkingArea
 from .submitter import SGETaskSubmitter, MPTaskSubmitter
 from .monitor import JobMonitor
@@ -14,7 +14,7 @@ def validate_tasks(tasks):
 
 def sge_submit(
     name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True, env={},
+    sleep=5, request_resubmission_options=True,
 ):
     if not validate_tasks(tasks):
         logger.error(
@@ -23,7 +23,7 @@ def sge_submit(
         )
         return []
     area = WorkingArea(os.path.abspath(path))
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]), env=env)
+    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
     monitor = JobMonitor(submitter)
 
     results = []
