@@ -4,14 +4,14 @@ import logging
 import time
 from builtins import input
 from multiprocessing import Pool
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .utils import run_command
 
 logger = logging.getLogger(__name__)
 
 class SGETaskSubmitter(object):
-    submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t {start}-{njobs}:1 {job_opts} {executable}'
+    submit_command = 'qsub -wd {wd} -V -e /dev/null -o /dev/null -t {start}-{njobs}:1 {job_opts} {executable}'
     regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.(?P<start>[0-9]+)-(?P<stop>[0-9]+):1 \(".*"\) has been submitted')
     def __init__(self, job_options):
         self.job_options = job_options
@@ -26,7 +26,6 @@ class SGETaskSubmitter(object):
 
         curdir = os.getcwd()
         njobs = len(tasks)
-        os.chdir(os.path.dirname(tasks[0]))
         executable = run_command("which pysge_worker.sh")[0].decode("utf-8")
 
         job_opts = self.job_options
@@ -39,7 +38,7 @@ class SGETaskSubmitter(object):
 
         cmd = self.submit_command.format(
             executable=executable, start=start+1, njobs=njobs+start,
-            job_opts=job_opts,
+            job_opts=job_opts, wd=os.path.dirname(tasks[0]),
         )
         if not dryrun:
             out, err = run_command(cmd)
@@ -54,8 +53,6 @@ class SGETaskSubmitter(object):
         else:
             print(cmd)
             jobid = 0
-
-        os.chdir(curdir)
 
         for aid in range(njobs):
             self.jobid_tasks['{}.{}'.format(jobid, aid+start)] = tasks[aid]
@@ -76,7 +73,7 @@ class MPTaskSubmitter(object):
 
         results = []
         pool = Pool(processes=ncores)
-        pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
+        pbar = tqdm(total=len(tasks), desc="Finished", disable=quiet)
 
         try:
             for task in tasks:

@@ -1,14 +1,18 @@
 #!/usr/bin/env python
-import gzip
-import pickle
+import lz4.frame
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 def main():
-    with gzip.open("task.p.gz", 'rb') as f:
+    with lz4.frame.open("task.p.lz4", 'rb') as f:
         task = pickle.load(f)
 
     result = task["task"](*task["args"], **task["kwargs"])
 
-    with gzip.open("result.p.gz", 'wb') as f:
+    with lz4.frame.open("result.p.lz4", 'wb') as f:
         pickle.dump(result, f)
 
 if __name__ == "__main__":

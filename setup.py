@@ -8,14 +8,13 @@ with open("requirements.txt", 'r') as fh:
 
 setuptools.setup(
     name="pysge",
-    version="0.1.0",
+    version="0.1.1",
     author="Shane Breeze",
     author_email="sdb15@ic.ac.uk",
     scripts=["pysge/pysge_worker.py", "pysge/pysge_worker.sh"],
     description="python interface to submit functions to an SGE batch cluster",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/shane-breeze/pysge",
     packages=setuptools.find_packages(),
     install_requires=requirements,
     setup_requires=["pytest-runner"],
