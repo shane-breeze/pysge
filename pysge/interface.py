@@ -14,7 +14,7 @@ def validate_tasks(tasks):
 
 def sge_submit(
     name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True,
+    sleep=5, request_resubmission_options=True, env={},
 ):
     if not validate_tasks(tasks):
         logger.error(
@@ -23,7 +23,7 @@ def sge_submit(
         )
         return []
     area = WorkingArea(os.path.abspath(path))
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
+    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]), env=env)
     monitor = JobMonitor(submitter)
 
     results = []
@@ -96,7 +96,7 @@ def local_submit(tasks, quiet=False):
         return []
 
     results = []
-    pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
+    pbar = tqdm(total=len(tasks), desc="Finished", disable=quiet)
 
     try:
         for t in tasks:

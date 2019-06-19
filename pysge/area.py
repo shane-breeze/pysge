@@ -21,6 +21,9 @@ class WorkingArea(object):
             self.get_areas()
         else:
             prefix = 'tpd_{:%Y%m%d_%H%M%S}_'.format(datetime.datetime.now())
+
+            if not os.path.exists(path):
+                os.makedirs(path)
             self.path = tempfile.mkdtemp(prefix=prefix, dir=os.path.abspath(path))
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
@@ -29,8 +32,7 @@ class WorkingArea(object):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
         for idx, task in tqdm.tqdm(
-            enumerate(tasks), total=len(tasks), dynamic_ncols=True,
-            disable=quiet,
+            enumerate(tasks), total=len(tasks), disable=quiet,
         ):
             package_name = 'task_{:05d}'.format(idx)
             path = os.path.join(self.path, package_name)

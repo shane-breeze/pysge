@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 class SGETaskSubmitter(object):
     submit_command = 'qsub -cwd -V -e /dev/null -o /dev/null -t {start}-{njobs}:1 {job_opts} {executable}'
     regex_submit = re.compile('Your job-array (?P<jobid>[0-9]+)\.(?P<start>[0-9]+)-(?P<stop>[0-9]+):1 \(".*"\) has been submitted')
-    def __init__(self, job_options):
+    def __init__(self, job_options, env={}):
         self.job_options = job_options
         self.jobid_tasks = {}
+        self.env = env
 
     def submit_tasks(
         self, tasks, start=0, dryrun=False, request_user_input=False,
@@ -42,7 +43,7 @@ class SGETaskSubmitter(object):
             job_opts=job_opts,
         )
         if not dryrun:
-            out, err = run_command(cmd)
+            out, err = run_command(cmd, env=self.env)
             match = self.regex_submit.search(out.decode("utf-8"))
             if match is None:
                 logger.error("Malformed qsub submission string: {}".format(repr(out.decode("utf-8"))))
@@ -76,7 +77,7 @@ class MPTaskSubmitter(object):
 
         results = []
         pool = Pool(processes=ncores)
-        pbar = tqdm(total=len(tasks), desc="Finished", dynamic_ncols=True, disable=quiet)
+        pbar = tqdm(total=len(tasks), desc="Finished", disable=quiet)
 
         try:
             for task in tasks:
