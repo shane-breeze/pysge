@@ -10,6 +10,9 @@ def main():
     with lz4.frame.open("task.p.lz4", 'rb') as f:
         task = pickle.load(f)
 
+    print("Task = {}\n\nargs = {}\n\nkwargs = {}\n".format(
+        task["task"], task["args"], task["kwargs"],
+    ))
     result = task["task"](*task["args"], **task["kwargs"])
 
     with lz4.frame.open("result.p.lz4", 'wb') as f:
