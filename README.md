@@ -13,7 +13,7 @@ Designed to work inside a jupyter notebook.
 
 ## How to use
 
-[Docs](https://shane-breeze.github.io/pysge/) and [example of SGE submission](https://shane-breeze.github.io/pysge/docs/)
+[Docs](https://shane-breeze.github.io/pysge/).
 
 High-level interface use:
 
