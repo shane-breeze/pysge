@@ -36,7 +36,7 @@ class WorkingArea(object):
                 os.makedirs(path)
             file_path = os.path.join(os.path.join(path, "task.p.lz4"))
             with lz4.frame.open(file_path, 'wb') as f:
-                dill.dump(task, f)
+                dill.dump(task, f, recurse=True)
             task_paths.append(path)
         self.task_paths = task_paths
 
