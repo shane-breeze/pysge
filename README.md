@@ -12,7 +12,7 @@ Call python functions on (IC) SGE batch cluster - with tqdm progress bars.
 
 ## How to use
 
-[Example of SGE submission](pysge_example.html)
+[Docs](https://shane-breeze.github.io/pysge/) and [example of SGE submission](https://shane-breeze.github.io/pysge/docs/)
 
 High-level interface use:
 
