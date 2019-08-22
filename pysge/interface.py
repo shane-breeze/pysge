@@ -15,9 +15,50 @@ def validate_tasks(tasks):
     return True
 
 def sge_submit(
-    name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False,
+    tasks, label, tmpdir, options="-q hep.q", dryrun=False, quiet=False,
     sleep=5, request_resubmission_options=True, return_files=False,
 ):
+    """
+    Submit jobs to an SGE batch system.
+
+    Parameters
+    ----------
+    tasks : list
+        A list of dictrionaries with the keys: task, args and kwargs. Each
+        element is run on a node as task(*args, **kwargs).
+
+    label : str
+        Label given to the qsub submission script through -N.
+
+    tmpdir : str
+        Path to temporary directory (doesn't have to exist) where pysge stores
+        job infomation. Each call will have a unique identifier in the form
+        tpd_YYYYMMDD_hhmmss_xxxxxxxx. Within this directory exists all tasks in
+        separate directories with a dilled file, stdout and stderr for that
+        particular job.
+
+    options : str (default = "-q hep.q")
+        Additional options to pass to the qsub command. Take care since the
+        following options are already in use: -wd, -V, -e, -o and -t.
+
+    dryrun : bool (default = False)
+        Create directories and files but don't submit the jobs.
+
+    quiet : bool (default = False)
+        Don't print tqdm progress bars. Other prints are controlled by logging.
+
+    sleep : float (default = 5)
+        Minimum time between queries to the batch system.
+
+    request_resubmission_options : bool (default = True)
+        When a job fails the master process will expect a stdin from the user
+        to alter the submission options (e.g. to increase walltime or memory
+        requested). If False it will use the original options.
+
+    return_files : bool (default = True)
+        Instead of opening the output files and loading them into python, just
+        send the paths to the output files and let the user deal with them.
+    """
     if not validate_tasks(tasks):
         logger.error(
             "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
