@@ -12,6 +12,8 @@ Call python functions on (IC) SGE batch cluster - with tqdm progress bars.
 
 ## How to use
 
+[Example of SGE submission](pysge_example.html)
+
 High-level interface use:
 
 ```
@@ -28,8 +30,9 @@ The return value is a list of results for each task, in order o tasks.
 
 # How it works
 
-For SGE batch system a working area is created and the functions + args + kwargs are pickled. A submitter then submits each pickled file to the batch using subprocess. A monitor checks the status of these jobs, waits until all are finished and returns the results.
+For SGE batch system a working area is created and the functions + args + kwargs are dilled. A submitter then submits each dilled file to the batch using subprocess. A monitor checks the status of these jobs, waits until all are finished and returns the results.
 
 For multiprocessing no working area is needed and the submitter uses multiprocessing.
 
 For local no submitter is needed. It just loops over the tasks.
+
