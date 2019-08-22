@@ -9,6 +9,7 @@
 ```
 
 Call python functions on (IC) SGE batch cluster - with tqdm progress bars.
+Designed to work inside a jupyter notebook.
 
 ## How to use
 
@@ -19,14 +20,21 @@ High-level interface use:
 ```
 import pysge
 
-tasks = [...] # list of dicts with keys ["task", "args", "kwargs"] run on each node as task(*args, **kwargs)
+def myfunc(a, b):
+    return a + b
+
+tasks = [
+    {"task": myfunc, "args": (1, 2), "kwargs": {}},
+    {"task": myfunc, "args": (3, 4), "kwargs": {}},
+    {"task": myfunc, "args": (5, 6), "kwargs": {}},
+]
 
 results = pysge.local_submit(tasks)
-results = pysge.mp_submit(tasks, ncores=4)
+results = pysge.mp_submit(tasks, ncores=3)
 results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q")
 ```
 
-The return value is a list of results for each task, in order o tasks.
+The return value is a list of results for each task, in order of tasks.
 
 # How it works
 
@@ -35,4 +43,3 @@ For SGE batch system a working area is created and the functions + args + kwargs
 For multiprocessing no working area is needed and the submitter uses multiprocessing.
 
 For local no submitter is needed. It just loops over the tasks.
-
