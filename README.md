@@ -23,7 +23,7 @@ tasks = [...] # list of dicts with keys ["task", "args", "kwargs"] run on each n
 
 results = pysge.local_submit(tasks)
 results = pysge.mp_submit(tasks, ncores=4)
-results = pysge.sge_submit("name", "/tmp/pysge-temporaries", tasks=tasks, options="-q hep.q")
+results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q")
 ```
 
 The return value is a list of results for each task, in order o tasks.
