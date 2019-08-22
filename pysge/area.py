@@ -4,13 +4,9 @@ import tempfile
 import lz4.frame
 import glob
 from tqdm.auto import tqdm
+import dill
 import logging
 logger = logging.getLogger(__name__)
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 class WorkingArea(object):
     def __init__(self, path, resume=False):
@@ -40,7 +36,7 @@ class WorkingArea(object):
                 os.makedirs(path)
             file_path = os.path.join(os.path.join(path, "task.p.lz4"))
             with lz4.frame.open(file_path, 'wb') as f:
-                pickle.dump(task, f)
+                dill.dump(task, f)
             task_paths.append(path)
         self.task_paths = task_paths
 

@@ -1,4 +1,6 @@
 import os
+import dill
+import lz4.frame
 from tqdm.auto import tqdm
 from .area import WorkingArea
 from .submitter import SGETaskSubmitter, MPTaskSubmitter
@@ -14,7 +16,7 @@ def validate_tasks(tasks):
 
 def sge_submit(
     name, path, tasks=[], options="-q hep.q", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True,
+    sleep=5, request_resubmission_options=True, return_files=False,
 ):
     if not validate_tasks(tasks):
         logger.error(
@@ -36,7 +38,15 @@ def sge_submit(
             )
     except KeyboardInterrupt as e:
         submitter.killall()
-    return results
+
+    if return_files:
+        return results
+
+    results_not_files = []
+    for path in results:
+        with lz4.frame.open(path, 'rb') as f:
+            results_not_files.append(dill.load(f))
+    return results_not_files
 
 def sge_submit_yield(
     name, path, tasks=[], options="-q hep.q", quiet=False, sleep=5,

@@ -3,14 +3,10 @@ import logging
 import lz4.frame
 import time
 import copy
+import dill
 from tqdm.auto import tqdm
 from .utils import run_command
 logger = logging.getLogger(__name__)
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 SGE_JOBSTATUS = {
     1: "Running",
@@ -124,10 +120,10 @@ class JobMonitor(object):
             pos = int(os.path.basename(task).split("_")[-1])
             try:
                 with lz4.frame.open(os.path.join(task, "result.p.lz4"), 'rb') as f:
-                    pickle.load(f)
+                    dill.load(f)
                 results[pos] = os.path.join(task, "result.p.lz4")
                 finished.append(jobid)
-            except (IOError, EOFError, pickle.UnpicklingError) as e:
+            except (IOError, EOFError, dill.UnpicklingError) as e:
                 logger.info('Resubmitting {}: {}'.format(jobid, task))
                 self.submitter.submit_tasks(
                     [task], start=pos, request_user_input=request_user_input,
