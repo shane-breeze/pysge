@@ -1,10 +1,13 @@
 import os
 import dill
 import lz4.frame
+import logging
 from tqdm.auto import tqdm
 from .area import WorkingArea
 from .submitter import SGETaskSubmitter, MPTaskSubmitter
 from .monitor import JobMonitor
+
+logger = logging.getLogger(__name__)
 
 def validate_tasks(tasks):
     for task in tasks:
@@ -19,7 +22,8 @@ def sge_submit(
     sleep=5, request_resubmission_options=True, return_files=False,
 ):
     """
-    Submit jobs to an SGE batch system.
+    Submit jobs to an SGE batch system. Return a list of the results of each
+    job (i.e. the return values of the function calls)
 
     Parameters
     ----------
@@ -55,7 +59,7 @@ def sge_submit(
         to alter the submission options (e.g. to increase walltime or memory
         requested). If False it will use the original options.
 
-    return_files : bool (default = True)
+    return_files : bool (default = False)
         Instead of opening the output files and loading them into python, just
         send the paths to the output files and let the user deal with them.
     """
@@ -65,8 +69,8 @@ def sge_submit(
             "'kwargs': {..}}, ...], where 'task' is callable."
         )
         return []
-    area = WorkingArea(os.path.abspath(path))
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(name), options]))
+    area = WorkingArea(os.path.abspath(tmpdir))
+    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
     monitor = JobMonitor(submitter)
 
     results = []
