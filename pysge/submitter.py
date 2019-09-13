@@ -46,7 +46,8 @@ class SGETaskSubmitter(object):
             if match is None:
                 logger.error("Command: {}".format(cmd))
                 logger.error("Malformed qsub submission string: {}".format(repr(out.decode("utf-8"))))
-                raise RuntimeError
+                logger.error("Skipping and returning on the next resubmission round")
+                return
             jobid = int(match.group("jobid"))
             start = int(match.group("start"))
             stop = int(match.group("stop"))
