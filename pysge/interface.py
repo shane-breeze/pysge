@@ -20,6 +20,7 @@ def _validate_tasks(tasks):
 def sge_submit(
     tasks, label, tmpdir, options="-q hep.q", dryrun=False, quiet=False,
     sleep=5, request_resubmission_options=True, return_files=False,
+    dill_kw={"recurse": True},
 ):
     """
     Submit jobs to an SGE batch system. Return a list of the results of each
@@ -62,6 +63,9 @@ def sge_submit(
     return_files : bool (default = False)
         Instead of opening the output files and loading them into python, just
         send the paths to the output files and let the user deal with them.
+
+    dill_kw : dict
+        Kwargs to pass to dill.dump
     """
     if not _validate_tasks(tasks):
         logger.error(
@@ -74,7 +78,7 @@ def sge_submit(
     monitor = JobMonitor(submitter)
 
     results = []
-    area.create_areas(tasks, quiet=quiet)
+    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     try:
         submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
         if not dryrun:
@@ -95,7 +99,7 @@ def sge_submit(
 
 def sge_submit_yield(
     tasks, label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
-    request_resubmission_options=True,
+    request_resubmission_options=True, dill_kw={"recurse": True},
 ):
     """
     Submit jobs to an SGE batch system. No monitoring is perfomed and the
@@ -134,6 +138,9 @@ def sge_submit_yield(
         When a job fails the master process will expect an stdin from the user
         to alter the submission options (e.g. to increase walltime or memory
         requested). If False it will use the original options.
+
+    dill_kw : dict
+        Kwargs to pass to dill.dump
     """
 
     if not _validate_tasks(tasks):
@@ -146,7 +153,7 @@ def sge_submit_yield(
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
     monitor = JobMonitor(submitter)
 
-    area.create_areas(tasks, quiet=quiet)
+    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     submitter.submit_tasks(area.task_paths, quiet=quiet)
     return monitor.request_jobs(
         sleep=sleep, request_user_input=request_resubmission_options,
@@ -154,7 +161,7 @@ def sge_submit_yield(
 
 def sge_resume(
     label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
-    request_resubmission_options=True,
+    request_resubmission_options=True, return_files=False,
 ):
     """
     Resubmit jobs based on the temporary directory (with the tpd_*
@@ -183,6 +190,10 @@ def sge_resume(
         When a job fails the master process will expect an stdin from the user
         to alter the submission options (e.g. to increase walltime or memory
         requested). If False it will use the original options.
+
+    return_files : bool (default = False)
+        Instead of opening the output files and loading them into python, just
+        send the paths to the output files and let the user deal with them.
     """
     area = WorkingArea(os.path.abspath(tmpdir), resume=True)
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
@@ -197,7 +208,15 @@ def sge_resume(
         )
     except KeyboardInterrupt as e:
         submitter.killall()
-    return results
+
+    if return_files:
+        return results
+
+    results_not_files = []
+    for path in results:
+        with lz4.frame.open(path, 'rb') as f:
+            results_not_files.append(dill.load(f))
+    return results_not_files
 
 def mp_submit(tasks, ncores=4, quiet=False):
     """

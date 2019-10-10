@@ -24,6 +24,7 @@ SGE_JOBSTATE_CODES = {
     "t": 1,
     "Rr": 1,
     "Rt": 1,
+    "hr": 1,
 
     # Pending
     "qw": 2,
