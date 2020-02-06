@@ -32,6 +32,8 @@ tasks = [
 results = pysge.local_submit(tasks)
 results = pysge.mp_submit(tasks, ncores=3)
 results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q")
+print(results)
+# [3, 7, 11]
 ```
 
 The return value is a list of results for each task, in order of tasks.
