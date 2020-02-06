@@ -24,7 +24,7 @@ class WorkingArea(object):
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
-    def create_areas(self, tasks, quiet=False, dill_kw={"recurse": True}):
+    def create_areas(self, tasks, quiet=False, dill_kw={"recurse": False}):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
         for idx, task in tqdm(

@@ -20,7 +20,7 @@ def _validate_tasks(tasks):
 def sge_submit(
     tasks, label, tmpdir, options="-q hep.q", dryrun=False, quiet=False,
     sleep=5, request_resubmission_options=True, return_files=False,
-    dill_kw={"recurse": True},
+    dill_kw={"recurse": False},
 ):
     """
     Submit jobs to an SGE batch system. Return a list of the results of each
@@ -99,7 +99,7 @@ def sge_submit(
 
 def sge_submit_yield(
     tasks, label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
-    request_resubmission_options=True, dill_kw={"recurse": True},
+    request_resubmission_options=True, dill_kw={"recurse": False},
 ):
     """
     Submit jobs to an SGE batch system. No monitoring is perfomed and the
