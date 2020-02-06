@@ -220,7 +220,7 @@ def sge_resume(
 
 def condor_submit(
     tasks, label, tmpdir, options="", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True,
+    sleep=5, request_resubmission_options=True, return_files=False,
     dill_kw={"recurse": False},
 ):
     if not _validate_tasks(tasks):
@@ -234,7 +234,7 @@ def condor_submit(
     monitor = CondorJobMonitor(submitter)
 
     results = []
-    area.create_areas(tasks, quiet=quiet)
+    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     try:
         submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
         if not dryrun:
@@ -243,7 +243,15 @@ def condor_submit(
             )
     except KeyboardInterrupt as e:
         submitter.killall()
-    return results
+
+    if return_files:
+        return results
+
+    results_not_files = []
+    for path in results:
+        with gzip.open(path, 'rb') as f:
+            results_not_files.append(dill.load(f))
+    return results_not_files
 
 def condor_submit_yield(
     tasks, label, tmpdir, options="", quiet=False, sleep=5,
@@ -259,15 +267,15 @@ def condor_submit_yield(
     submitter = CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
     monitor = CondorJobMonitor(submitter)
 
-    area.create_areas(tasks, quiet=quiet)
+    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     submitter.submit_tasks(area.task_paths, quiet=quiet)
     return monitor.request_jobs(
         sleep=sleep, request_user_input=request_resubmission_options,
     )
 
 def condor_resume(
-    tasks, label, tmpdir, options="", quiet=False, sleep=5,
-    request_resubmission_options=True, dill_kw={"recurse": False},
+    label, tmpdir, options="", quiet=False, sleep=5,
+    request_resubmission_options=True, return_files=False,
 ):
     area = WorkingArea(os.path.abspath(tmpdir), resume=True)
     submitter = CondorTaskSubmitter(" ".join(['-N {}'.format(label), options]))
@@ -282,7 +290,15 @@ def condor_resume(
         )
     except KeyboardInterrupt as e:
         submitter.killall()
-    return results
+
+    if return_files:
+        return results
+
+    results_not_files = []
+    for path in results:
+        with gzip.open(path, 'rb') as f:
+            results_not_files.append(dill.load(f))
+    return results_not_files
 
 def mp_submit(tasks, ncores=4, quiet=False):
     """

@@ -2,9 +2,14 @@ import os
 import re
 import logging
 import time
-from builtins import input
+#from builtins import input
 from multiprocessing import Pool
 from tqdm.auto import tqdm
+
+try:
+    input = raw_input
+except NameError:
+    pass
 
 try:
     import htcondor
@@ -31,7 +36,7 @@ class SGETaskSubmitter(object):
 
         curdir = os.getcwd()
         njobs = len(tasks)
-        executable = run_command("which pysge_worker.sh")[0].decode("utf-8")
+        executable = run_command("which pysge_worker.sh")[0]
 
         job_opts = self.job_options
         if request_user_input:
@@ -47,10 +52,10 @@ class SGETaskSubmitter(object):
         )
         if not dryrun:
             out, err = run_command(cmd)
-            match = self.regex_submit.search(out.decode("utf-8"))
+            match = self.regex_submit.search(out)
             if match is None:
                 logger.error("Command: {}".format(cmd))
-                logger.error("Malformed qsub submission string: {}".format(repr(out.decode("utf-8"))))
+                logger.error("Malformed qsub submission string: {}".format(repr(out)))
                 logger.error("Skipping and returning on the next resubmission round")
                 return
             jobid = int(match.group("jobid"))
@@ -89,7 +94,7 @@ class CondorTaskSubmitter(object):
 
         curdir = os.getcwd()
         njobs = len(tasks)
-        executable = run_command("which conpy_worker.sh")[0].rstrip("\n")
+        executable = run_command("which pysge_condorworker.sh")[0].rstrip("\n")
 
         job_opts = self.job_options
         if request_user_input:
@@ -127,7 +132,7 @@ class CondorTaskSubmitter(object):
             match = self.regex_submit.search(out)
             if match is None:
                 logger.error("Malformed condor_submit config:\n{}".format(input_))
-                assert RuntimeError
+                raise RuntimeError
             jobid = int(match.group("clusterid"))
             logger.info('Submitted {}.{}-{}:1'.format(jobid, start, len(tasks)+start-1))
         else:

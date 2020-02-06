@@ -19,10 +19,10 @@ SGE_JOBSTATUS = {
 
 CONDOR_JOBSTATUS = {
     0: "Unexpanded", "Unexpanded": 0,
-    1: "Idle",       "Idle": 1,
+    1: "Pending",    "Pending": 1,
     2: "Running",    "Running": 2,
-    3: "Removed",    "Removed": 3,
-    4: "Completed",  "Completed": 4,
+    3: "Deleted",    "Deleted": 3,
+    4: "Finished",   "Finished": 4,
     5: "Held",       "Held": 5,
     6: "Error",      "Error": 6,
 }
@@ -156,7 +156,7 @@ class JobMonitor(object):
 
 class SGEJobMonitor(JobMonitor):
     def __init__(self, submitter):
-        super()
+        JobMonitor.__init__(self, submitter)
         self.jobstatus = SGE_JOBSTATUS
         self.jobstate_codes = SGE_JOBSTATE_CODES
 
@@ -183,7 +183,7 @@ class SGEJobMonitor(JobMonitor):
 
 class CondorJobMonitor(JobMonitor):
     def __init__(self, submitter):
-        super()
+        JobMonitor.__init__(self, submitter)
         self.jobstatus = CONDOR_JOBSTATUS
 
     def query_jobs(self):
