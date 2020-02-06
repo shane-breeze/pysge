@@ -29,11 +29,10 @@ tasks = [
     {"task": myfunc, "args": (5, 6), "kwargs": {}},
 ]
 
-results = pysge.local_submit(tasks)
-results = pysge.mp_submit(tasks, ncores=3)
-results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q")
-print(results)
-# [3, 7, 11]
+results = pysge.local_submit(tasks) # single process for loop over tasks - tasks stored in memory
+results = pysge.mp_submit(tasks, ncores=3) # multiple processes with a queue for the tasks - tasks stored in memory
+results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q") # batch pool queue for the tasks - tasks stored on disk
+print(results) # [3, 7, 11]
 ```
 
 The return value is a list of results for each task, in order of tasks.
