@@ -31,7 +31,8 @@ tasks = [
 
 results = pysge.local_submit(tasks) # single process for loop over tasks - tasks stored in memory
 results = pysge.mp_submit(tasks, ncores=3) # multiple processes with a queue for the tasks - tasks stored in memory
-results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q") # batch pool queue for the tasks - tasks stored on disk
+results = pysge.sge_submit(tasks, "name", "/tmp/pysge-temporaries", options="-q hep.q") # SGE batch pool queue for the tasks - tasks stored on disk
+# WIP: results = pysge.condor_submit(tasks, "name", "/tmp/pysge-temporaries") # Condor batch pool queue for the tasks - tasks stored on disk
 print(results) # [3, 7, 11]
 ```
 

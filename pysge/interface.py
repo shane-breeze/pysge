@@ -1,6 +1,6 @@
 import os
 import dill
-import lz4.frame
+import gzip
 import logging
 from tqdm.auto import tqdm
 from .area import WorkingArea
@@ -93,7 +93,7 @@ def sge_submit(
 
     results_not_files = []
     for path in results:
-        with lz4.frame.open(path, 'rb') as f:
+        with gzip.open(path, 'rb') as f:
             results_not_files.append(dill.load(f))
     return results_not_files
 
@@ -214,7 +214,7 @@ def sge_resume(
 
     results_not_files = []
     for path in results:
-        with lz4.frame.open(path, 'rb') as f:
+        with gzip.open(path, 'rb') as f:
             results_not_files.append(dill.load(f))
     return results_not_files
 

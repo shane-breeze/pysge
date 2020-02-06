@@ -1,6 +1,6 @@
 import os
 import logging
-import lz4.frame
+import gzip
 import time
 import copy
 import dill
@@ -120,9 +120,9 @@ class JobMonitor(object):
         for jobid, task in jobid_tasks.items():
             pos = int(os.path.basename(task).split("_")[-1])
             try:
-                with lz4.frame.open(os.path.join(task, "result.p.lz4"), 'rb') as f:
+                with gzip.open(os.path.join(task, "result.p.gz"), 'rb') as f:
                     dill.load(f)
-                results[pos] = os.path.join(task, "result.p.lz4")
+                results[pos] = os.path.join(task, "result.p.gz")
                 finished.append(jobid)
             except (IOError, EOFError, dill.UnpicklingError) as e:
                 logger.info('Resubmitting {}: {}'.format(jobid, task))
