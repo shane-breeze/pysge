@@ -1,7 +1,7 @@
 import os
 import datetime
 import tempfile
-import lz4.frame
+import gzip
 import glob
 from tqdm.auto import tqdm
 import dill
@@ -24,7 +24,7 @@ class WorkingArea(object):
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
-    def create_areas(self, tasks, quiet=False, dill_kw={"recurse": True}):
+    def create_areas(self, tasks, quiet=False, dill_kw={"recurse": False}):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
         for idx, task in tqdm(
@@ -34,8 +34,8 @@ class WorkingArea(object):
             path = os.path.join(self.path, package_name)
             if not os.path.exists(path):
                 os.makedirs(path)
-            file_path = os.path.join(os.path.join(path, "task.p.lz4"))
-            with lz4.frame.open(file_path, 'wb') as f:
+            file_path = os.path.join(os.path.join(path, "task.p.gz"))
+            with gzip.open(file_path, 'wb') as f:
                 dill.dump(task, f, **dill_kw)
             task_paths.append(path)
         self.task_paths = task_paths

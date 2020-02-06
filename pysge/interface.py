@@ -1,6 +1,6 @@
 import os
 import dill
-import lz4.frame
+import gzip
 import logging
 from tqdm.auto import tqdm
 from .area import WorkingArea
@@ -20,7 +20,7 @@ def _validate_tasks(tasks):
 def sge_submit(
     tasks, label, tmpdir, options="-q hep.q", dryrun=False, quiet=False,
     sleep=5, request_resubmission_options=True, return_files=False,
-    dill_kw={"recurse": True},
+    dill_kw={"recurse": False},
 ):
     """
     Submit jobs to an SGE batch system. Return a list of the results of each
@@ -93,13 +93,13 @@ def sge_submit(
 
     results_not_files = []
     for path in results:
-        with lz4.frame.open(path, 'rb') as f:
+        with gzip.open(path, 'rb') as f:
             results_not_files.append(dill.load(f))
     return results_not_files
 
 def sge_submit_yield(
     tasks, label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
-    request_resubmission_options=True, dill_kw={"recurse": True},
+    request_resubmission_options=True, dill_kw={"recurse": False},
 ):
     """
     Submit jobs to an SGE batch system. No monitoring is perfomed and the
@@ -214,7 +214,7 @@ def sge_resume(
 
     results_not_files = []
     for path in results:
-        with lz4.frame.open(path, 'rb') as f:
+        with gzip.open(path, 'rb') as f:
             results_not_files.append(dill.load(f))
     return results_not_files
 
