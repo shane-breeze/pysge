@@ -8,10 +8,10 @@ with open("requirements.txt", 'r') as fh:
 
 setuptools.setup(
     name="pysge",
-    version="0.2.4",
+    version="0.3.0",
     author="Shane Breeze",
     author_email="sdb15@ic.ac.uk",
-    scripts=["pysge/pysge_worker.py", "pysge/pysge_worker.sh"],
+    scripts=["pysge/pysge_worker.py", "pysge/pysge_sgeworker.sh", "pysge/pysge_condorworker.sh"],
     description="python interface to submit functions to an SGE batch cluster",
     long_description=long_description,
     long_description_content_type="text/markdown",

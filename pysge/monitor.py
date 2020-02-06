@@ -9,12 +9,22 @@ from .utils import run_command
 logger = logging.getLogger(__name__)
 
 SGE_JOBSTATUS = {
-    1: "Running",
-    2: "Pending",
-    3: "Suspended",
-    4: "Error",
-    5: "Deleted",
-    6: "Finished",
+    1: "Running",   "Running": 1,
+    2: "Pending",   "Pending": 2,
+    3: "Suspended", "Suspended": 3,
+    4: "Error",     "Error": 4,
+    5: "Deleted",   "Deleted": 5,
+    6: "Finished",  "Finished": 6,
+}
+
+CONDOR_JOBSTATUS = {
+    0: "Unexpanded", "Unexpanded": 0,
+    1: "Idle",       "Idle": 1,
+    2: "Running",    "Running": 2,
+    3: "Removed",    "Removed": 3,
+    4: "Completed",  "Completed": 4,
+    5: "Held",       "Held": 5,
+    6: "Error",      "Error": 6,
 }
 
 # https://gist.github.com/cmaureir/4fa2d34bc9a1bd194af1
@@ -47,6 +57,8 @@ SGE_JOBSTATE_CODES = {
 class JobMonitor(object):
     def __init__(self, submitter):
         self.submitter = submitter
+        self.jobstatus = {}
+        self.jobstate_codes = {}
 
     def monitor_jobs(self, sleep=5, request_user_input=True):
         jobid_tasks = self.submitter.jobid_tasks
@@ -100,17 +112,21 @@ class JobMonitor(object):
             job_statuses = self.query_jobs()
             all_queried_jobs = []
             for state, queried_jobs in job_statuses.items():
-                all_queried_jobs.extend(queried_jobs)
+                if state not in [self.jobstatus["Finished"]]:
+                    all_queried_jobs.extend(queried_jobs)
 
             jobs_not_queried = {
                 jobid: task
                 for jobid, task in self.submitter.jobid_tasks.items()
                 if jobid not in all_queried_jobs and jobid not in finished
             }
-            finished.extend(self.check_jobs(jobs_not_queried, results, request_user_input=request_user_input))
+            finished.extend(self.check_jobs(
+                jobs_not_queried, results,
+                request_user_input=request_user_input,
+            ))
 
             nremaining = ntotal - len(finished)
-            yield job_statuses.get(1, {}), results
+            yield job_statuses.get(self.jobstatus["Running"], {}), results
 
         # all jobs finished - final loop
         yield {}, results
@@ -134,10 +150,21 @@ class JobMonitor(object):
         return finished
 
     def query_jobs(self):
+        raise NotImplementedError(
+            "JobMonitor.query_jobs must be implemented in inherited class"
+        )
+
+class SGEJobMonitor(JobMonitor):
+    def __init__(self, submitter):
+        super()
+        self.jobstatus = SGE_JOBSTATUS
+        self.jobstate_codes = SGE_JOBSTATE_CODES
+
+    def query_jobs(self):
         job_status = {}
         out, err = run_command("qstat -g d")
 
-        for l in out.decode('utf-8').splitlines():
+        for l in out.splitlines():
             if l.startswith("job-ID") or l.startswith("-----"):
                 continue
             ws = l.split()
@@ -147,7 +174,30 @@ class JobMonitor(object):
             if not '{}.{}'.format(jobid, taskid) in self.submitter.jobid_tasks.keys():
                 continue
 
-            state = SGE_JOBSTATE_CODES[ws[4]]
+            state = self.jobstate_codes[ws[4]]
+            if state not in job_status:
+                job_status[state] = []
+            job_status[state].append('{}.{}'.format(jobid, taskid))
+
+        return job_status
+
+class CondorJobMonitor(JobMonitor):
+    def __init__(self, submitter):
+        super()
+        self.jobstatus = CONDOR_JOBSTATUS
+
+    def query_jobs(self):
+        job_status = {}
+
+        for job in self.submitter.schedd.xquery(
+            projection=["ClusterId", "ProcId", "JobStatus"],
+        ):
+            jobid = job["ClusterId"]
+            taskid = job["ProcId"]
+            state = job["JobStatus"]
+            if not '{}.{}'.format(jobid, taskid) in self.submitter.jobid_tasks.keys():
+                continue
+
             if state not in job_status:
                 job_status[state] = []
             job_status[state].append('{}.{}'.format(jobid, taskid))

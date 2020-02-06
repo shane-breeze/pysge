@@ -4,8 +4,8 @@ import gzip
 import logging
 from tqdm.auto import tqdm
 from .area import WorkingArea
-from .submitter import SGETaskSubmitter, MPTaskSubmitter
-from .monitor import JobMonitor
+from .submitter import SGETaskSubmitter, CondorTaskSubmitter, MPTaskSubmitter
+from .monitor import SGEJobMonitor, CondorJobMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def sge_submit(
         return []
     area = WorkingArea(os.path.abspath(tmpdir))
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
-    monitor = JobMonitor(submitter)
+    monitor = SGEJobMonitor(submitter)
 
     results = []
     area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
@@ -151,7 +151,7 @@ def sge_submit_yield(
         return []
     area = WorkingArea(os.path.abspath(tmpdir))
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
-    monitor = JobMonitor(submitter)
+    monitor = SGEJobMonitor(submitter)
 
     area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     submitter.submit_tasks(area.task_paths, quiet=quiet)
@@ -199,7 +199,7 @@ def sge_resume(
     submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
     for idx in range(len(area.task_paths)):
         submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
-    monitor = JobMonitor(submitter)
+    monitor = SGEJobMonitor(submitter)
 
     results = []
     try:
@@ -217,6 +217,72 @@ def sge_resume(
         with gzip.open(path, 'rb') as f:
             results_not_files.append(dill.load(f))
     return results_not_files
+
+def condor_submit(
+    tasks, label, tmpdir, options="", dryrun=False, quiet=False,
+    sleep=5, request_resubmission_options=True,
+    dill_kw={"recurse": False},
+):
+    if not _validate_tasks(tasks):
+        logger.error(
+            "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
+            "'kwargs': {..}}, ...], where 'task' is callable."
+        )
+        return []
+    area = WorkingArea(os.path.abspath(tmpdir))
+    submitter = CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
+    monitor = CondorJobMonitor(submitter)
+
+    results = []
+    area.create_areas(tasks, quiet=quiet)
+    try:
+        submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
+        if not dryrun:
+            results = monitor.monitor_jobs(
+                sleep=sleep, request_user_input=request_resubmission_options,
+            )
+    except KeyboardInterrupt as e:
+        submitter.killall()
+    return results
+
+def condor_submit_yield(
+    tasks, label, tmpdir, options="", quiet=False, sleep=5,
+    request_resubmission_options=True, dill_kw={"recurse": False},
+):
+    if not _validate_tasks(tasks):
+        logger.error(
+            "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
+            "'kwargs': {..}}, ...], where 'task' is callable."
+        )
+        return []
+    area = WorkingArea(os.path.abspath(tmpdir))
+    submitter = CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
+    monitor = CondorJobMonitor(submitter)
+
+    area.create_areas(tasks, quiet=quiet)
+    submitter.submit_tasks(area.task_paths, quiet=quiet)
+    return monitor.request_jobs(
+        sleep=sleep, request_user_input=request_resubmission_options,
+    )
+
+def condor_resume(
+    tasks, label, tmpdir, options="", quiet=False, sleep=5,
+    request_resubmission_options=True, dill_kw={"recurse": False},
+):
+    area = WorkingArea(os.path.abspath(tmpdir), resume=True)
+    submitter = CondorTaskSubmitter(" ".join(['-N {}'.format(label), options]))
+    for idx in range(len(area.task_paths)):
+        submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
+    monitor = CondorJobMonitor(submitter)
+
+    results = []
+    try:
+        results = monitor.monitor_jobs(
+            sleep=sleep, request_user_input=request_resubmission_options,
+        )
+    except KeyboardInterrupt as e:
+        submitter.killall()
+    return results
 
 def mp_submit(tasks, ncores=4, quiet=False):
     """
