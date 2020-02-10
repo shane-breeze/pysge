@@ -17,14 +17,24 @@ def _validate_tasks(tasks):
             return False
     return True
 
-def sge_submit(
-    tasks, label, tmpdir, options="-q hep.q", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True, return_files=False,
+def _return_results(results, return_files=False):
+    if return_files:
+        return results
+
+    results_not_files = []
+    for path in results:
+        with gzip.open(path, 'rb') as f:
+            results_not_files.append(dill.load(f))
+    return results_not_files
+
+def batch_submit(
+    tasks, label, tmpdir, batch="sge", options="-q hep.q", dryrun=False,
+    quiet=False, sleep=5, request_resubmission_options=True, return_files=False,
     dill_kw={"recurse": False},
 ):
     """
-    Submit jobs to an SGE batch system. Return a list of the results of each
-    job (i.e. the return values of the function calls)
+    Submit jobs to abatch system. Return a list of the results of each job
+    (i.e. the return values of the function calls)
 
     Parameters
     ----------
@@ -41,6 +51,9 @@ def sge_submit(
         tpd_YYYYMMDD_hhmmss_xxxxxxxx. Within this directory exists all tasks in
         separate directories with a dilled file, stdout and stderr for that
         particular job.
+
+    batch : str (default = "sge")
+        Batch system to submit to: ("sge", "condor")
 
     options : str (default = "-q hep.q")
         Additional options to pass to the qsub command. Take care since the
@@ -74,8 +87,15 @@ def sge_submit(
         )
         return []
     area = WorkingArea(os.path.abspath(tmpdir))
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
-    monitor = SGEJobMonitor(submitter)
+
+    submitter = {
+        "sge": SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
+        "condor": CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
+    }[batch]
+    monitor = {
+        "sge": SGEJobMonitor(submitter),
+        "condor": CondorJobMonitor(submitter),
+    }[batch]
 
     results = []
     area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
@@ -88,17 +108,10 @@ def sge_submit(
     except KeyboardInterrupt as e:
         submitter.killall()
 
-    if return_files:
-        return results
+    return _return_results(results, return_files=False)
 
-    results_not_files = []
-    for path in results:
-        with gzip.open(path, 'rb') as f:
-            results_not_files.append(dill.load(f))
-    return results_not_files
-
-def sge_submit_yield(
-    tasks, label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
+def batch_submit_yield(
+    tasks, label, tmpdir, batch="sge", options="-q hep.q", quiet=False, sleep=5,
     request_resubmission_options=True, dill_kw={"recurse": False},
 ):
     """
@@ -123,6 +136,9 @@ def sge_submit_yield(
         tpd_YYYYMMDD_hhmmss_xxxxxxxx. Within this directory exists all tasks in
         separate directories with a dilled file, stdout and stderr for that
         particular job.
+
+    batch : str (default = "sge")
+        Batch system to submit to: ("sge", "condor")
 
     options : str (default = "-q hep.q")
         Additional options to pass to the qsub command. Take care since the
@@ -150,8 +166,15 @@ def sge_submit_yield(
         )
         return []
     area = WorkingArea(os.path.abspath(tmpdir))
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
-    monitor = SGEJobMonitor(submitter)
+
+    submitter = {
+        "sge": SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
+        "condor": CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
+    }[batch]
+    monitor = {
+        "sge": SGEJobMonitor(submitter),
+        "condor": CondorJobMonitor(submitter),
+    }[batch]
 
     area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
     submitter.submit_tasks(area.task_paths, quiet=quiet)
@@ -159,8 +182,8 @@ def sge_submit_yield(
         sleep=sleep, request_user_input=request_resubmission_options,
     )
 
-def sge_resume(
-    label, tmpdir, options="-q hep.q", quiet=False, sleep=5,
+def batch_resume(
+    label, tmpdir, batch="sge", options="-q hep.q", quiet=False, sleep=5,
     request_resubmission_options=True, return_files=False,
 ):
     """
@@ -175,6 +198,9 @@ def sge_resume(
 
     tmpdir : str
         Path to temporary directory created by an sge_submit or similar.
+
+    batch : str (default = "sge")
+        Batch system to submit to: ("sge", "condor")
 
     options : str (default = "-q hep.q")
         Additional options to pass to the qsub command. Take care since the
@@ -196,10 +222,17 @@ def sge_resume(
         send the paths to the output files and let the user deal with them.
     """
     area = WorkingArea(os.path.abspath(tmpdir), resume=True)
-    submitter = SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
+
+    submitter = {
+        "sge": SGETaskSubmitter(" ".join(['-N {}'.format(label), options]))
+        "condor": CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
+    }[batch]
     for idx in range(len(area.task_paths)):
         submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
-    monitor = SGEJobMonitor(submitter)
+    monitor = {
+        "sge": SGEJobMonitor(submitter),
+        "condor": CondorJobMonitor(submitter),
+    }[batch]
 
     results = []
     try:
@@ -209,96 +242,7 @@ def sge_resume(
     except KeyboardInterrupt as e:
         submitter.killall()
 
-    if return_files:
-        return results
-
-    results_not_files = []
-    for path in results:
-        with gzip.open(path, 'rb') as f:
-            results_not_files.append(dill.load(f))
-    return results_not_files
-
-def condor_submit(
-    tasks, label, tmpdir, options="", dryrun=False, quiet=False,
-    sleep=5, request_resubmission_options=True, return_files=False,
-    dill_kw={"recurse": False},
-):
-    if not _validate_tasks(tasks):
-        logger.error(
-            "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
-            "'kwargs': {..}}, ...], where 'task' is callable."
-        )
-        return []
-    area = WorkingArea(os.path.abspath(tmpdir))
-    submitter = CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
-    monitor = CondorJobMonitor(submitter)
-
-    results = []
-    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
-    try:
-        submitter.submit_tasks(area.task_paths, dryrun=dryrun, quiet=quiet)
-        if not dryrun:
-            results = monitor.monitor_jobs(
-                sleep=sleep, request_user_input=request_resubmission_options,
-            )
-    except KeyboardInterrupt as e:
-        submitter.killall()
-
-    if return_files:
-        return results
-
-    results_not_files = []
-    for path in results:
-        with gzip.open(path, 'rb') as f:
-            results_not_files.append(dill.load(f))
-    return results_not_files
-
-def condor_submit_yield(
-    tasks, label, tmpdir, options="", quiet=False, sleep=5,
-    request_resubmission_options=True, dill_kw={"recurse": False},
-):
-    if not _validate_tasks(tasks):
-        logger.error(
-            "Invalid tasks. Ensure tasks=[{'task': .., 'args': [..], "
-            "'kwargs': {..}}, ...], where 'task' is callable."
-        )
-        return []
-    area = WorkingArea(os.path.abspath(tmpdir))
-    submitter = CondorTaskSubmitter(",".join(['JobBatchName={}'.format(label), options]))
-    monitor = CondorJobMonitor(submitter)
-
-    area.create_areas(tasks, quiet=quiet, dill_kw=dill_kw)
-    submitter.submit_tasks(area.task_paths, quiet=quiet)
-    return monitor.request_jobs(
-        sleep=sleep, request_user_input=request_resubmission_options,
-    )
-
-def condor_resume(
-    label, tmpdir, options="", quiet=False, sleep=5,
-    request_resubmission_options=True, return_files=False,
-):
-    area = WorkingArea(os.path.abspath(tmpdir), resume=True)
-    submitter = CondorTaskSubmitter(" ".join(['-N {}'.format(label), options]))
-    for idx in range(len(area.task_paths)):
-        submitter.jobid_tasks['{}'.format(idx)] = area.task_paths[idx]
-    monitor = CondorJobMonitor(submitter)
-
-    results = []
-    try:
-        results = monitor.monitor_jobs(
-            sleep=sleep, request_user_input=request_resubmission_options,
-        )
-    except KeyboardInterrupt as e:
-        submitter.killall()
-
-    if return_files:
-        return results
-
-    results_not_files = []
-    for path in results:
-        with gzip.open(path, 'rb') as f:
-            results_not_files.append(dill.load(f))
-    return results_not_files
+    return _return_results(results, return_files=False)
 
 def mp_submit(tasks, ncores=4, quiet=False):
     """
