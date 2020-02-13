@@ -75,7 +75,7 @@ class MPTaskSubmitter(object):
 
         results = []
         pool = Pool(processes=ncores)
-        pbar = tqdm(total=len(tasks), desc="Finished", disable=quiet)
+        pbar = tqdm(total=len(tasks), desc="Finished", disable=quiet, ncols=80)
 
         try:
             for task in tasks:
