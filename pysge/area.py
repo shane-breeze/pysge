@@ -28,7 +28,7 @@ class WorkingArea(object):
         task_paths = []
         logger.info('Creating paths in {}'.format(self.path))
         for idx, task in tqdm(
-            enumerate(tasks), total=len(tasks), disable=quiet,
+            enumerate(tasks), total=len(tasks), disable=quiet, ncols=80,
         ):
             package_name = 'task_{:05d}'.format(idx)
             path = os.path.join(self.path, package_name)

@@ -52,8 +52,8 @@ class JobMonitor(object):
         jobid_tasks = self.submitter.jobid_tasks
         ntotal = len(jobid_tasks)
 
-        pbar_run = tqdm(total=ntotal, desc="Running ")
-        pbar_fin = tqdm(total=ntotal, desc="Finished")
+        pbar_run = tqdm(total=ntotal, desc="Running ", ncols=80)
+        pbar_fin = tqdm(total=ntotal, desc="Finished", ncols=80)
 
         for running, results in self.return_finished_jobs(request_user_input=request_user_input):
             pbar_run.n = len(running)
@@ -71,8 +71,8 @@ class JobMonitor(object):
         jobid_tasks = self.submitter.jobid_tasks
         ntotal = len(jobid_tasks)
 
-        pbar_run = tqdm(total=ntotal, desc="Running ")
-        pbar_fin = tqdm(total=ntotal, desc="Finished")
+        pbar_run = tqdm(total=ntotal, desc="Running ", ncols=80)
+        pbar_fin = tqdm(total=ntotal, desc="Finished", ncols=80)
         try:
             for running, results in self.return_finished_jobs(request_user_input=request_user_input):
                 pbar_run.n = len(running)
